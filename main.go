@@ -67,19 +67,26 @@ type record struct {
 	} `xml:"convening-organization"`
 }
 
-type fileEntry struct {
-	fn      string
-	content []byte
-}
+var (
+	countryCode    string
+	countryPattern []byte
+)
 
 func main() {
 
-	var filename = "/home/rcir178/Data/ORCID-API-2.0_activities_xml_10_2018.tar.gz"
+	if len(os.Args) < 2 {
+		log.Error("Missing source file")
+		log.Info("Usage: ", os.Args[0], " FILE [CONTRY]")
+		log.Info("E.g., ", os.Args[0], " ORCID-API-2.0_activities_xml_10_2018.tar.gz NZ")
+	}
 
-	f, err := os.Open(filename)
+	f, err := os.Open(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	countryCode = os.Args[2]
+	countryPattern = []byte(">" + countryCode + "<")
 
 	zr, err := gzip.NewReader(f)
 	if err != nil {
@@ -88,8 +95,6 @@ func main() {
 
 	tr := tar.NewReader(zr)
 
-	// fc := make(chan fileEntry, 100)
-	// done := make(chan bool)
 	var wg sync.WaitGroup
 
 	for {
@@ -121,10 +126,10 @@ func main() {
 }
 
 func handleFile(fn string, content []byte, wg *sync.WaitGroup) {
-	if bytes.Contains(content, []byte(">NZ<")) {
+	if bytes.Contains(content, []byte(countryPattern)) {
 		var rec record
 		xml.Unmarshal(content, &rec)
-		if rec.Organization.Address.Country == "NZ" || rec.ConveningOrganization.Address.Country == "NZ" {
+		if rec.Organization.Address.Country == countryCode || rec.ConveningOrganization.Address.Country == countryCode {
 			log.Info(fn)
 			err := ioutil.WriteFile(filepath.Base(fn), content, 0644)
 			if err != nil {
