@@ -74,15 +74,18 @@ var (
 	countryPattern []byte
 	recordType     string
 	dest           string
-	searchString   string
+	searchString   []byte
 )
 
 func main() {
 
+	var sc string
 	app := cli.NewApp()
 	app.Name = "extract-orcid"
 	app.Usage = `extract filtered data from ORCID profile acitvity public data`
 	app.Version = "1.0.0"
+	app.ArgsUsage = "FILE"
+	defaultDest, _ := os.Getwd()
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
@@ -93,14 +96,23 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:        "type,t",
-			Usage:       "the record type: emp[ployment], edu[cation], work, fund[ing]...",
+			Usage:       "the record type: emp[ployment], edu[cation], work, fund[ing], peer[-review] ...",
 			Destination: &recordType,
+		},
+		cli.StringFlag{
+			Name:        "output,o",
+			Usage:       "the output destination directory",
+			Value:       defaultDest,
+			Destination: &dest,
 		},
 		cli.StringFlag{
 			Name:        "search,s",
 			Usage:       "the search string",
-			Destination: &searchString,
+			Destination: &sc,
 		},
+	}
+	if sc != "" {
+		searchString = []byte(sc)
 	}
 
 	app.Action = func(c *cli.Context) error {
@@ -115,9 +127,9 @@ func main() {
 
 func extract(c *cli.Context) error {
 
-	if len(c.Args()) < 1 {
+	if c.NArg() < 1 {
 		log.Error("Missing source file")
-		log.Info("Usage: ", os.Args[0], " FILE [CONTRY]")
+		log.Info("Usage: ", os.Args[0], " FILE")
 		log.Info("E.g., ", os.Args[0], " ORCID-API-2.0_activities_xml_10_2018.tar.gz NZ")
 		return errors.New("Missing source file")
 	}
@@ -150,7 +162,8 @@ func extract(c *cli.Context) error {
 		case tar.TypeDir:
 			continue
 		case tar.TypeReg:
-			if strings.HasSuffix(fn, ".xml") {
+			if strings.HasSuffix(fn, ".xml") &&
+				(recordType == "" || strings.Contains(fn, recordType)) {
 				recBytes, _ := ioutil.ReadAll(tr)
 				wg.Add(1)
 				go handleFile(fn, recBytes, &wg)
@@ -175,8 +188,11 @@ func handleFile(fn string, content []byte, wg *sync.WaitGroup) {
 		if rec.Organization.Address.Country == countryCode || rec.ConveningOrganization.Address.Country == countryCode {
 			log.Info(fn)
 			destFn := filepath.Join(dest, fn)
-			os.MkdirAll(filepath.Dir(destFn), os.ModePerm)
-			err := ioutil.WriteFile(fn, content, 0644)
+			err := os.MkdirAll(filepath.Dir(destFn), os.ModePerm)
+			if err != nil {
+				log.Error(err)
+			}
+			err = ioutil.WriteFile(destFn, content, 0644)
 			if err != nil {
 				log.Error(err)
 			}

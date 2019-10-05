@@ -1,0 +1,22 @@
+language: go
+
+go:
+  - 1.12.x
+  - 1.13.x
+
+env: GO111MODULE=on
+before_install:
+  # - go get golang.org/x/tools/cmd/cover
+  # - go get github.com/mattn/goveralls
+  - go get golang.org/x/lint/golint
+  # - go get github.com/rakyll/gotest
+
+script:
+  - go vet ./...
+  - golint ./...
+  - gotest -v -tags test -cover -covermode=count -coverprofile coverage.out  ./...
+  - go build ./...
+  - ./orcid-pub-data-extractor -t empl ./data/ORCID-API-2.0_activities_xml.tar.gz && test -f activities/942/0000-0003-3824-0942/peer-reviews/0000-0003-3824-0942_peer-reviews_62857.xml
+
+# after_success:
+#   - $GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
