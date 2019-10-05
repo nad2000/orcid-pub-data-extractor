@@ -82,7 +82,7 @@ func main() {
 	var sc string
 	app := cli.NewApp()
 	app.Name = "extract-orcid"
-	app.Usage = `extract filtered data from ORCID profile acitvity public data`
+	app.Usage = `extract filtered data from ORCID profile activity public data`
 	app.Version = "1.0.0"
 	app.ArgsUsage = "FILE"
 	defaultDest, _ := os.Getwd()
@@ -128,7 +128,6 @@ func main() {
 func extract(c *cli.Context) error {
 
 	if c.NArg() < 1 {
-		log.Error("Missing source file")
 		log.Info("Usage: ", os.Args[0], " FILE")
 		log.Info("E.g., ", os.Args[0], " ORCID-API-2.0_activities_xml_10_2018.tar.gz NZ")
 		return errors.New("Missing source file")
