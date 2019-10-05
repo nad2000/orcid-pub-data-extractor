@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/xml"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/urfave/cli"
 )
 
 type record struct {
@@ -70,27 +72,67 @@ type record struct {
 var (
 	countryCode    string
 	countryPattern []byte
+	recordType     string
+	dest           string
+	searchString   string
 )
 
 func main() {
 
-	if len(os.Args) < 2 {
-		log.Error("Missing source file")
-		log.Info("Usage: ", os.Args[0], " FILE [CONTRY]")
-		log.Info("E.g., ", os.Args[0], " ORCID-API-2.0_activities_xml_10_2018.tar.gz NZ")
+	app := cli.NewApp()
+	app.Name = "extract-orcid"
+	app.Usage = `extract filtered data from ORCID profile acitvity public data`
+	app.Version = "1.0.0"
+
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "country,l",
+			Value:       "NZ",
+			Usage:       "the country the record is related to",
+			Destination: &countryCode,
+		},
+		cli.StringFlag{
+			Name:        "type,t",
+			Usage:       "the record type: emp[ployment], edu[cation], work, fund[ing]...",
+			Destination: &recordType,
+		},
+		cli.StringFlag{
+			Name:        "search,s",
+			Usage:       "the search string",
+			Destination: &searchString,
+		},
 	}
 
-	f, err := os.Open(os.Args[1])
+	app.Action = func(c *cli.Context) error {
+		return extract(c)
+	}
+
+	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
-	countryCode = os.Args[2]
+func extract(c *cli.Context) error {
+
+	if len(c.Args()) < 1 {
+		log.Error("Missing source file")
+		log.Info("Usage: ", os.Args[0], " FILE [CONTRY]")
+		log.Info("E.g., ", os.Args[0], " ORCID-API-2.0_activities_xml_10_2018.tar.gz NZ")
+		return errors.New("Missing source file")
+	}
+
+	f, err := os.Open(c.Args().Get(0))
+	if err != nil {
+		return err
+	}
+
+	// Used for pre-filter content to reduce time on xml parsing
 	countryPattern = []byte(">" + countryCode + "<")
 
 	zr, err := gzip.NewReader(f)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	tr := tar.NewReader(zr)
@@ -123,6 +165,7 @@ func main() {
 		}
 	}
 	wg.Wait()
+	return nil
 }
 
 func handleFile(fn string, content []byte, wg *sync.WaitGroup) {
@@ -131,7 +174,9 @@ func handleFile(fn string, content []byte, wg *sync.WaitGroup) {
 		xml.Unmarshal(content, &rec)
 		if rec.Organization.Address.Country == countryCode || rec.ConveningOrganization.Address.Country == countryCode {
 			log.Info(fn)
-			err := ioutil.WriteFile(filepath.Base(fn), content, 0644)
+			destFn := filepath.Join(dest, fn)
+			os.MkdirAll(filepath.Dir(destFn), os.ModePerm)
+			err := ioutil.WriteFile(fn, content, 0644)
 			if err != nil {
 				log.Error(err)
 			}
