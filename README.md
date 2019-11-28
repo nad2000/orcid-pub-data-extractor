@@ -1,4 +1,5 @@
 # ORCID Public Data Extractor
+![](.github/workflows/go.yml/badge.svg)
 
 This is a simple tool that can help with filtering and extracting specific
 activity records. Currently it supports filtering activity records that are
