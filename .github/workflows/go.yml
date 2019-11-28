@@ -20,11 +20,11 @@ jobs:
       run: |
         env; go env; go version
         go get -v -t -d ./...
-        go get honnef.co/go/tools/cmd/staticcheck
         if [ -f Gopkg.toml ]; then
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             dep ensure
         fi
+        go get honnef.co/go/tools/cmd/staticcheck
         
     - name: QA
       run: staticcheck ./...
