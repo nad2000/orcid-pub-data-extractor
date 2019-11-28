@@ -17,8 +17,8 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Get dependencies
-      run: env; go env; go version
       run: |
+        env; go env; go version
         go get -v -t -d ./...
         go get honnef.co/go/tools/cmd/staticcheck
         if [ -f Gopkg.toml ]; then
@@ -30,7 +30,8 @@ jobs:
       run: staticcheck ./...
 
     - name: Build
-      run: go build -v .
-      run: GOOS=windows GOARCH=386 go build -o orcid-pub-data-extractor.exe .
+      run: |
+        go build -v .
+        GOOS=windows GOARCH=386 go build -o orcid-pub-data-extractor.exe .
       
       
