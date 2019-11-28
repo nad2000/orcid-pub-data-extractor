@@ -25,10 +25,10 @@ jobs:
             dep ensure
         fi
         
-    - name: QA
-      run: |
-        go get honnef.co/go/tools/cmd/staticcheck
-        $GOPATH/bin/staticcheck ./...
+    # - name: QA
+    #   run: |
+    #     go get honnef.co/go/tools/cmd/staticcheck
+    #     $GOPATH/bin/staticcheck ./...
 
     - name: Build
       run: |
