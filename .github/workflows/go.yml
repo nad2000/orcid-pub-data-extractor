@@ -18,16 +18,16 @@ jobs:
 
     - name: Get dependencies
       run: |
-        env; go env; go version
         go get -v -t -d ./...
         if [ -f Gopkg.toml ]; then
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             dep ensure
         fi
-        go get honnef.co/go/tools/cmd/staticcheck
         
     - name: QA
-      run: staticcheck ./...
+      run: |
+        go get honnef.co/go/tools/cmd/staticcheck
+        staticcheck ./...
 
     - name: Build
       run: |
