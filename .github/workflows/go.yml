@@ -26,7 +26,7 @@ jobs:
         
     - name: QA
       run: |
-        go get honnef.co/go/tools/cmd/staticcheck
+        go install honnef.co/go/tools/cmd/staticcheck
         staticcheck ./...
 
     - name: Build
