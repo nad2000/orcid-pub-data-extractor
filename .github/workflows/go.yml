@@ -18,6 +18,7 @@ jobs:
 
     - name: Get dependencies
       run: |
+        env; go evn
         go get -v -t -d ./...
         if [ -f Gopkg.toml ]; then
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
@@ -33,5 +34,19 @@ jobs:
       run: |
         go build -v .
         GOOS=windows GOARCH=386 go build -o orcid-pub-data-extractor.exe .
-      
-      
+        
+    - name: Upload Linux binaries to release
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: orcid-pub-data-extractor
+        asset_name: orcid-pub-data-extractor-linux-amd64
+        tag: ${{ github.ref }}      
+
+    - name: Upload Windows binaries to release
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: orcid-pub-data-extractor
+        asset_name: orcid-pub-data-extractor-windows-amd64
+        tag: ${{ github.ref }}      
