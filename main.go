@@ -74,12 +74,12 @@ var (
 	countryPattern []byte
 	recordType     string
 	dest           string
-	searchString   []byte
+	searchString   string
+	searchPattern  []byte
 )
 
 func main() {
 
-	var sc string
 	app := cli.NewApp()
 	app.Name = "extract-orcid"
 	app.Usage = `extract filtered data from ORCID profile activity public data`
@@ -89,7 +89,7 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:        "country,l",
+			Name:        "country,c",
 			Value:       "NZ",
 			Usage:       "the country the record is related to",
 			Destination: &countryCode,
@@ -108,13 +108,9 @@ func main() {
 		cli.StringFlag{
 			Name:        "search,s",
 			Usage:       "the search string",
-			Destination: &sc,
+			Destination: &searchString,
 		},
 	}
-	if sc != "" {
-		searchString = []byte(sc)
-	}
-
 	app.Action = func(c *cli.Context) error {
 		return extract(c)
 	}
@@ -130,12 +126,16 @@ func extract(c *cli.Context) error {
 	if c.NArg() < 1 {
 		log.Info("Usage: ", os.Args[0], " FILE")
 		log.Info("E.g., ", os.Args[0], " ORCID-API-2.0_activities_xml_10_2018.tar.gz NZ")
-		return errors.New("Missing source file")
+		return errors.New("missing source file")
 	}
 
 	f, err := os.Open(c.Args().Get(0))
 	if err != nil {
 		return err
+	}
+
+	if searchString != "" {
+		searchPattern = []byte(searchString)
 	}
 
 	// Used for pre-filter content to reduce time on xml parsing
@@ -169,7 +169,7 @@ func extract(c *cli.Context) error {
 			}
 		default:
 			log.Infof("%s : %c %s %s\n",
-				"Yikes! Unable to figure out type",
+				"yikes! Unable to figure out type",
 				h.Typeflag,
 				"in file",
 				fn,
@@ -181,7 +181,8 @@ func extract(c *cli.Context) error {
 }
 
 func handleFile(fn string, content []byte, wg *sync.WaitGroup) {
-	if bytes.Contains(content, []byte(countryPattern)) {
+	if bytes.Contains(content, countryPattern) &&
+		(searchPattern == nil || bytes.Contains(content, searchPattern)) {
 		var rec record
 		xml.Unmarshal(content, &rec)
 		if rec.Organization.Address.Country == countryCode || rec.ConveningOrganization.Address.Country == countryCode {

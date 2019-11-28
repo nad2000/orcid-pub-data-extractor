@@ -10,13 +10,26 @@ before_install:
   # - go get github.com/mattn/goveralls
   - go get golang.org/x/lint/golint
   # - go get github.com/rakyll/gotest
+  - go get honnef.co/go/tools/cmd/staticcheck
 
 script:
+  - env; go version; go env
   - go vet ./...
   - golint ./...
+  - staticcheck ./...
   # - gotest -v -tags test -cover -covermode=count -coverprofile coverage.out  ./...
   - go build ./...
   - ./orcid-pub-data-extractor -t empl ./data/ORCID-API-2.0_activities_xml.tar.gz && test -f ./activities/636/0000-0001-6480-3636/employments/0000-0001-6480-3636_employments_772888.xml
+  - GOOS=windows GOARCH=386 go build -o orcid-pub-data-extractor.exe  .
 
-# after_success:
+after_success:
 #   - $GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+          # BB_AUTH_STRING=<bb_user_name>:<APP Password>
+  # - |
+  #   OUTPUT="${GOPATH}/bin/extract-blocks"
+  #   if [ "${CIRCLE_BRANCH}" != "master" ] ; then
+  #     OUTPUT="${OUTPUT}-${CIRCLE_BRANCH}"
+  #     mv "${GOPATH}/bin/extract-blocks" "${OUTPUT}"
+  #   fi
+  #   curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/downloads" --form files=@"${OUTPUT}"
+
