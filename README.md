@@ -1,5 +1,6 @@
 # ORCID Public Data Extractor
-![](https://github.com/nad2000/orcid-pub-data-extractor/workflows/.github/workflows/go.yml/badge.svg)
+
+[![Actions Status](https://github.com/nad2000/orcid-pub-data-extractor/workflows/Go/badge.svg)](https://github.com/nad2000/orcid-pub-data-extractor/actions)
 
 This is a simple tool that can help with filtering and extracting specific
 activity records. Currently it supports filtering activity records that are
