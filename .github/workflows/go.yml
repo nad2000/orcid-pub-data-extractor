@@ -40,13 +40,13 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: orcid-pub-data-extractor
-        asset_name: orcid-pub-data-extractor-linux-amd64
+        asset_name: orcid-pub-data-extractor
         tag: ${{ github.ref }}      
 
     - name: Upload Windows binaries to release
       uses: svenstaro/upload-release-action@v1-release
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: orcid-pub-data-extractor
-        asset_name: orcid-pub-data-extractor-windows-amd64
-        tag: ${{ github.ref }}      
+        file: orcid-pub-data-extractor.exe
+        asset_name: orcid-pub-data-extractor.exe
+        tag: ${{ github.ref }}
