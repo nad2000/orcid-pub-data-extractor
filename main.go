@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -70,12 +71,11 @@ type record struct {
 }
 
 var (
-	countryCode    string
-	countryPattern []byte
-	recordType     string
-	dest           string
-	searchString   string
-	searchPattern  []byte
+	countryCode                                      string
+	countryPattern                                   []byte
+	recordType, dest, searchString, searchExpression string
+	searchPattern                                    []byte
+	searchRE                                         *regexp.Regexp
 )
 
 func main() {
@@ -110,6 +110,11 @@ func main() {
 			Usage:       "the search string",
 			Destination: &searchString,
 		},
+		cli.StringFlag{
+			Name:        "regex,r",
+			Usage:       "the search regular expression (https://github.com/google/re2/wiki/Syntax)",
+			Destination: &searchExpression,
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		return extract(c)
@@ -136,6 +141,12 @@ func extract(c *cli.Context) error {
 
 	if searchString != "" {
 		searchPattern = []byte(searchString)
+	}
+
+	if searchExpression != "" {
+		if searchRE, err = regexp.Compile(searchExpression); err != nil {
+			log.WithError(err).Errorf("Failed to compile regular expression %q", searchExpression)
+		}
 	}
 
 	// Used for pre-filter content to reduce time on xml parsing
@@ -182,7 +193,8 @@ func extract(c *cli.Context) error {
 
 func handleFile(fn string, content []byte, wg *sync.WaitGroup) {
 	if bytes.Contains(content, countryPattern) &&
-		(searchPattern == nil || bytes.Contains(content, searchPattern)) {
+		(searchPattern == nil || bytes.Contains(content, searchPattern)) &&
+		(searchRE == nil || searchRE.Match(content)) {
 		var rec record
 		xml.Unmarshal(content, &rec)
 		if rec.Organization.Address.Country == countryCode || rec.ConveningOrganization.Address.Country == countryCode {
