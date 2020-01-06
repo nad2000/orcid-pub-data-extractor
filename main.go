@@ -83,7 +83,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "extract-orcid"
 	app.Usage = `extract filtered data from ORCID profile activity public data`
-	app.Version = "1.0.0"
+	app.Version = "1.1.0"
 	app.ArgsUsage = "FILE"
 	defaultDest, _ := os.Getwd()
 
